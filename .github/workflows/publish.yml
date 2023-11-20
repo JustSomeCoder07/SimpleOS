@@ -1,0 +1,41 @@
+name: Publish SimpleOS
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    name: Create Release
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Install Dependencies
+      run: sudo apt install build-essential nasm
+      
+    - name: Build Project
+      run: make floppy
+
+    - name: Compress Artifacts
+      run: |
+        zip simpleos_${{ github.ref_name }}-x86.zip floppy.img
+        tar -czvf simpleos_${{ github.ref_name }}-x86.tar.gz floppy.img
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        name: Release ${{ github.ref_name }}
+        files: | 
+          simpleos_${{ github.ref_name }}-x86.zip 
+          simpleos_${{ github.ref_name }}-x86.tar.gz
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
